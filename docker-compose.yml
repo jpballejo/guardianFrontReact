@@ -1,0 +1,62 @@
+version: "3"
+services:
+  mongo:
+      container_name: mongo-guardian
+      image: mongo
+      restart: always
+      environment:
+        MONGO_INITDB_ROOT_USERNAME: root
+        MONGO_INITDB_ROOT_PASSWORD: admin1234
+        MONGO_INITDB_DATABASE: elGuardianDB
+      volumes:
+        - ./data:/data/elGuardianDB
+      ports:
+        - 27018:27017
+      networks:
+        - db-net
+  backend:
+      container_name: back-guardian
+      build: 
+        context: "./elGuardianJs/"
+        dockerfile: Dockerfile
+      env_file:
+        - ./elGuardianJs/ENVIRONMENT.env
+      ports:
+        - 3003:3003
+      volumes:
+      - './elGuardianJs:/app'
+      - '/app/node_modules'
+      - '/app/public'
+      restart: always
+      links:
+        - mongo
+      depends_on: 
+        - mongo  
+      networks:
+        - db-net
+
+  frontend:
+      container_name: front-guardian
+      command : npm run start 
+      build: 
+        context: "./elguardian-frontend"
+        dockerfile: Dockerfile
+      env_file:
+        - ./elguardian-frontend/.env
+      volumes:
+      - './elguardian-frontend:/app'
+      - '/app/node_modules'
+      ports:
+        - 3000:3000
+      restart: always
+      stdin_open: true
+      depends_on:
+        - backend
+      networks:
+        - db-net
+      links:
+        - backend
+      
+networks:
+    db-net:
+      driver: bridge
